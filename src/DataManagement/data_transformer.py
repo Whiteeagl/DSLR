@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 
 
-class CleanData(ABC):
+class DataTransformer(ABC):
 
     @abstractmethod
     def fit(self, data):
         pass
-
 
     @abstractmethod
     def transform(self, data):
