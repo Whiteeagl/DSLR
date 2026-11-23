@@ -54,3 +54,4 @@ if "__main__" == __name__:
 
     # Vrai describe de pandas
     print(d.clean_data.num_data.describe())
+
