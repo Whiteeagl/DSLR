@@ -8,7 +8,6 @@ from DataManagement.stats import Stats, ALL_COLUMNS
 class Describe:
     csv_file: str
     df_original: DataFrame = field(init=False, repr=False, compare=False)
-    df_numerical: DataFrame = field(init=False, repr=False, compare=False)
     clean_data: dict[str, list[float]] = field(init=False)
 
     def __post_init__(self):

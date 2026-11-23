@@ -22,6 +22,18 @@ class Stats:
 
     Plusieurs colonnes :
         mystat.mean(column=["Age", "Height"])
+
+    Toutes les colonnes :
+        mystat.mean(column=ALL_COLUMNS)
+
+
+    Pour recuperer les noms de colonnes :
+
+        names: list = self.keys()
+
+    Pour recuperer les valeurs par colonnes :
+
+        values: list = self.values()
     """
 
     def __init__(self, data: DataFrame):
