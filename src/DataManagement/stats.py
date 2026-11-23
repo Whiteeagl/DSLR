@@ -7,6 +7,7 @@ from typing import Optional, Union
 ColumnSelector = Optional[Union[str, list[str], tuple[str, ...]]]
 ALL_COLUMNS = object()
 
+
 class Stats:
     """
     Utilisation :
@@ -235,7 +236,6 @@ class Stats:
 
         return self.quantile(0.5, column)
 
-
     def keys(self):
 
         return [k for k in self._column_cache.keys()]
@@ -243,4 +243,3 @@ class Stats:
     def values(self):
 
         return [v for v in self._column_cache.values()]
-

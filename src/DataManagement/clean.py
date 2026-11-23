@@ -1,5 +1,5 @@
 from src.DataManagement.data_transformer import DataTransformer
-# from src.describe import Describe
+from src.DataManagement.stats import Stats
 import pandas as pd
 
 
@@ -25,12 +25,12 @@ class Clean(DataTransformer):
 
         self.columns = data.columns.tolist()
         self.fill_values = {}
+        my_stats = Stats(data)
         # describe_median = Describe().quartile_50()
 
         for column in data.columns:
             if pd.api.types.is_numeric_dtype(data[column]):
-                value = data[column].median()
-                # print("Median en cours...")
+                value = my_stats.median(column=column)
             else:
                 mode = data[column].mode(dropna=True)
                 if mode.empty:
