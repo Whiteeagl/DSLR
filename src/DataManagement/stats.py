@@ -1,8 +1,11 @@
 
-import pandas as pd
+from pandas import DataFrame, notna
 from math import sqrt
-from typing import Optional
+from typing import Optional, Union
 
+
+ColumnSelector = Optional[Union[str, list[str], tuple[str, ...]]]
+ALL_COLUMNS = object()
 
 class Stats:
     """
@@ -11,40 +14,60 @@ class Stats:
     mystat = Stats(mydataFrame)
 
     Statistiques globales :
-        _min = mystat.stack().min()
-        _std = mystat.stack().std()
+        mystat.stack().min()
+        mystat.stack().std()
 
-    Statistiques par colonne :
-        _min = mystat.min(column="Age")
-        _std = mystat.std(column="Age")
+    Une colonne :
+        mystat.mean(column="Age")
+
+    Plusieurs colonnes :
+        mystat.mean(column=["Age", "Height"])
+
+    Toutes les colonnes :
+        mystat.mean(column=ALL_COLUMNS)
+
+
+    Pour recuperer les noms de colonnes :
+
+        names: list = self.keys()
+
+    Pour recuperer les valeurs par colonnes :
+
+        values: list = self.values()
     """
 
-    def __init__(self, data: pd.DataFrame):
-        if not isinstance(data, pd.DataFrame):
+    def __init__(self, data: DataFrame):
+
+        if not isinstance(data, DataFrame):
             raise TypeError("data must be a pandas DataFrame")
 
         self.data = data
         self.num_data = data.select_dtypes(include="number")
+        if self.num_data.empty:
+            raise ValueError(f"{self.csv_file} has no numerical data.")
 
-        # Cache des données par colonne
+        # Cache des colonnes
         self._column_cache = {}
+        self._sorted_cache = {}
 
-        # Cache des données globales
+        # Cache global
         self.cleaned_num_data = None
 
-        # Préparation des colonnes
         for column in self.num_data.columns:
-            self._column_cache[column] = [
+
+            values = [
                 value
                 for value in self.num_data[column].tolist()
-                if pd.notna(value)
+                if notna(value)
             ]
 
-    # STACK()
+            self._column_cache[column] = values
+
+    # STACK
     def stack(self):
-        """Prépare les données globales une seule fois."""
 
         if self.cleaned_num_data is None:
+
             self.cleaned_num_data = sorted([
                 value
                 for values in self._column_cache.values()
@@ -56,87 +79,168 @@ class Stats:
     # GET VALUES
     def _get_values(self, column=None):
 
-        if column is not None:
-            if column not in self._column_cache:
-                raise ValueError(f"Unknown numeric column: {column}")
+        if column is None:
 
-            values = self._column_cache[column]
-
-        else:
             if self.cleaned_num_data is None:
                 raise RuntimeError("Call stack() before global statistics")
 
             values = self.cleaned_num_data
+
+        else:
+
+            if column not in self._column_cache:
+                raise ValueError(f"Unknown numeric column: {column}")
+
+            values = self._column_cache[column]
 
         if not values:
             raise ValueError("No valid numerical values available")
 
         return values
 
-    # MIN
-    def min(self, column: Optional[str] = None):
-        values = self._get_values(column)
+    # SORTED VALUES
+    def _get_sorted(self, column=None):
 
-        return values[0] if column is None else min(values)
+        if column is None:
+            return self._get_values()
+
+        if column not in self._sorted_cache:
+            self._sorted_cache[column] = sorted(
+                self._get_values(column)
+            )
+
+        return self._sorted_cache[column]
+
+    # COMPUTE
+    def _compute(self, function, column=None):
+
+        if column is ALL_COLUMNS:
+            return {
+                c: function(c)
+                for c in self._column_cache
+            }
+
+        if isinstance(column, (list, tuple)):
+            return {
+                c: function(c)
+                for c in column
+            }
+
+        return function(column)
+
+    # MIN
+    def min(self, column: ColumnSelector = None):
+
+        def _min(c):
+            values = self._get_sorted(c)
+            return values[0]
+
+        return self._compute(_min, column)
 
     # MAX
-    def max(self, column: Optional[str] = None):
-        values = self._get_values(column)
+    def max(self, column: ColumnSelector = None):
 
-        return values[-1] if column is None else max(values)
+        def _max(c):
+            values = self._get_sorted(c)
+            return values[-1]
 
-    # MEAN
-    def mean(self, column: Optional[str] = None):
-        values = self._get_values(column)
+        return self._compute(_max, column)
 
-        return sum(values) / len(values)
+    # SUM
+    def sum(self, column: ColumnSelector = None):
 
-    # STD
-    def std(self, column: Optional[str] = None):
-        values = self._get_values(column)
+        def _sum(c):
+            return sum(self._get_values(c))
 
-        mean = sum(values) / len(values)
-
-        variance = sum(
-            (x - mean) ** 2 for x in values
-        ) / len(values)
-
-        return sqrt(variance)
+        return self._compute(_sum, column)
 
     # COUNT
-    def count(self, column: Optional[str] = None):
-        return len(self._get_values(column))
+    def count(self, column: ColumnSelector = None):
+
+        def _count(c):
+            return len(self._get_values(c))
+
+        return self._compute(_count, column)
+
+    # MEAN
+    def mean(self, column: ColumnSelector = None):
+
+        def _mean(c):
+            values = self._get_values(c)
+            return sum(values) / len(values)
+
+        return self._compute(_mean, column)
+
+    # VARIANCE
+    def var(self, column: ColumnSelector = None):
+
+        def _var(c):
+            values = self._get_values(c)
+            mean = sum(values) / len(values)
+
+            return sum(
+                (x - mean) ** 2 for x in values
+            ) / len(values)
+
+        return self._compute(_var, column)
+
+    # STD
+    def std(self, column: ColumnSelector = None):
+
+        def _std(c):
+            return sqrt(self.var(c))
+
+        return self._compute(_std, column)
+
+    # RANGE
+    def range(self, column: ColumnSelector = None):
+
+        def _range(c):
+            values = self._get_sorted(c)
+            return values[-1] - values[0]
+
+        return self._compute(_range, column)
 
     # QUANTILE
-    def quantile(self, q: float, column: Optional[str] = None):
+    def quantile(self, q: float, column: ColumnSelector = None):
         """Quantile avec interpolation linéaire."""
 
         if not 0 <= q <= 1:
             raise ValueError("q must be between 0 and 1")
 
-        values = self._get_values(column)
+        def _quantile(c):
 
-        # Les données globales sont déjà triées.
-        # Les données d'une colonne doivent être triées.
-        if column is not None:
-            values = sorted(values)
+            values = self._get_sorted(c)
 
-        if len(values) == 1:
-            return values[0]
+            if len(values) == 1:
+                return values[0]
 
-        pos = (len(values) - 1) * q
+            pos = (len(values) - 1) * q
 
-        i = int(pos)
-        t = pos - i
+            i = int(pos)
+            t = pos - i
 
-        if i == len(values) - 1:
-            return values[i]
+            if i == len(values) - 1:
+                return values[i]
 
-        a = values[i]
-        b = values[i + 1]
+            a = values[i]
+            b = values[i + 1]
 
-        return a + (b - a) * t
+            return a + (b - a) * t
+
+        return self._compute(_quantile, column)
 
     # MEDIAN
-    def median(self, column: Optional[str] = None):
+    def median(self, column: ColumnSelector = None):
+
         return self.quantile(0.5, column)
+
+
+    def keys(self):
+
+        return [k for k in self._column_cache.keys()]
+
+    def values(self):
+
+        return [v for v in self._column_cache.values()]
+
