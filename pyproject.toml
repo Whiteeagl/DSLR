@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dslr"
+version = "0.1.0"
+dependencies = [
+    "pandas",
+    "numpy",
+    "matplotlib"]
+
+
+[tool.setuptools]
+py-modules = [
+    "abstracted_class",
+    "clean",
+    "data_preprocessor",
+    "data_transformer",
+    "normalize",
+    "stats",
+    "describe",
+    "main_test",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
