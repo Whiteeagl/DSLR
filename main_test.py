@@ -1,6 +1,6 @@
 import pandas as pd
 from src.DataManagement.data_preprocessor import DataPreprocessor
-
+from src.DataVisualization.scatter import Scatter
 
 # Load dataset
 csv_file = "datasets/dataset_train.csv"
@@ -30,3 +30,14 @@ print("\nMissing values remaining:")
 print(train_transform.isnull().sum())
 
 assert train_transform.isnull().sum().sum() == 0
+
+# Testing scatter plot
+# -> Attendre de normaliser les donnees pour que
+# les resultats aient plus de sens !!
+scatter = Scatter()
+
+scatter.plot(
+    train_transform,
+    "Potions",
+    "Divination"
+)
