@@ -1,4 +1,4 @@
-from src.DataManagement.clean import Clean
+from .clean import Clean
 
 
 class DataPreprocessor:

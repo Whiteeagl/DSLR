@@ -25,7 +25,7 @@ class Clean(DataTransformer):
 
         self.columns = data.columns.tolist()
         self.fill_values = {}
-        my_stats = Stats(data)
+        my_stats = Stats(data=data)
         # describe_median = Describe().quartile_50()
 
         for column in data.columns:
