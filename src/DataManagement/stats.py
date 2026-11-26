@@ -2,6 +2,7 @@
 from pandas import DataFrame, notna
 from math import sqrt
 from typing import Optional, Union
+from numpy import ndarray
 
 
 ColumnSelector = Optional[Union[str, list[str], tuple[str, ...]]]
@@ -37,15 +38,20 @@ class Stats:
         values: list = self.values()
     """
 
-    def __init__(self, data: DataFrame):
 
+    def __init__(self, data: Union[DataFrame, ndarray]):
+        if isinstance(data, ndarray):
+            data = DataFrame(data)
+
+        if not isinstance(data, DataFrame):
+            raise TypeError("data must be a pandas DataFrame or numpy ndarray")
         if not isinstance(data, DataFrame):
             raise TypeError("data must be a pandas DataFrame")
 
         self.data = data
         self.num_data = data.select_dtypes(include="number")
         if self.num_data.empty:
-            raise ValueError(f"{self.csv_file} has no numerical data.")
+            raise ValueError("data has no numerical data.")
 
         # Cache des colonnes
         self._column_cache = {}

@@ -1,5 +1,5 @@
-from data_transformer import DataTransformer as DT
-from stats import Stats
+from .data_transformer import DataTransformer as DT
+from .stats import Stats
 import numpy as np
 
 
